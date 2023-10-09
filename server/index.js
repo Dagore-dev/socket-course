@@ -18,10 +18,22 @@ const expressServer = app.listen(PORT, () => {
 const io = new Server(expressServer)
 
 io.on('connection', socket => {
-  console.log(`User ${socket.id} connected`)
+  // Next line emits only to the user connected.
+  socket.emit('message', 'Welcome to chat app')
+
+  // Next line emits to all others connected users.
+  socket.broadcast.emit('message', `User ${socket.id} connected`)
 
   socket.on('message', data => {
-    console.log(data)
+    // Next line emits to all connected users.
     io.emit('message', `${socket.id}: ${data}`)
+  })
+
+  socket.on('disconnect', () => {
+    socket.broadcast.emit('message', `User ${socket.id} disconnected`)
+  })
+
+  socket.on('activity', id => {
+    socket.broadcast.emit('activity', id)
   })
 })
