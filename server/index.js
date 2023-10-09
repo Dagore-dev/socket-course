@@ -1,14 +1,21 @@
-import { createServer } from 'http'
+import express from 'express'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { Server } from 'socket.io'
 
-const httpServer = createServer()
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.NODE_ENV === 'production'
-      ? false
-      : ['http://localhost:5500', 'http://127.0.0.1:5500']
-  }
+// Workaround needed because we use ESmodules instead of commonJS.
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const app = express()
+app.use(express.static(path.join(__dirname, 'public')))
+
+const PORT = process.env.PORT ?? '3500'
+const expressServer = app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`)
 })
+
+const io = new Server(expressServer)
 
 io.on('connection', socket => {
   console.log(`User ${socket.id} connected`)
@@ -18,6 +25,3 @@ io.on('connection', socket => {
     io.emit('message', `${socket.id}: ${data}`)
   })
 })
-
-const PORT = process.env.PORT ?? '3500'
-httpServer.listen(PORT, () => console.log(`Listening on port ${PORT}`))
